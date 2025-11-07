@@ -4,149 +4,201 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Project Pembangunan Ruang Sekolah Minggu</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    :root{
-      --glass: rgba(255,255,255,.7);
-      --ring: rgba(15,23,42,.06);
-    }
+    :root{ --glass:rgba(255,255,255,.7); --ring:rgba(15,23,42,.06);}
     body{ font-family:"Plus Jakarta Sans",system-ui,ui-sans-serif; }
+    .card {border-radius:1rem;padding:1rem;background:var(--glass);backdrop-filter:blur(8px);border:1px solid var(--ring);}
   </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-rose-50 via-indigo-50 to-emerald-50 text-slate-800">
-  <div class="absolute inset-0 pointer-events-none">
-    <div class="absolute -top-24 -right-16 w-72 h-72 rounded-full bg-rose-200/40 blur-3xl"></div>
-    <div class="absolute -bottom-24 -left-16 w-80 h-80 rounded-full bg-emerald-200/40 blur-3xl"></div>
-  </div>
+
+<!-- Background image + soft veil -->
+<div class="fixed inset-0 -z-20" style="background:url('background.jpg') center/cover no-repeat; background-attachment:fixed;"></div>
+<div class="fixed inset-0 -z-10 pointer-events-none">
+  <div class="absolute -top-24 -right-16 w-72 h-72 rounded-full bg-rose-200/40 blur-3xl"></div>
+  <div class="absolute -bottom-24 -left-16 w-80 h-80 rounded-full bg-emerald-200/40 blur-3xl"></div>
+  <div class="absolute inset-0 bg-white/60"></div>
+</div>
 
   <header class="relative max-w-6xl mx-auto p-6">
     <div class="rounded-3xl px-6 py-5 bg-gradient-to-r from-indigo-200/60 via-sky-200/60 to-emerald-200/60 ring-1" style="--tw-ring-color: var(--ring);">
-      <h1 class="text-2xl md:text-3xl font-bold tracking-tight">Project Pembangunan Ruang Sekolah Minggu</h1>
-      <p class="text-sm text-slate-600 mt-1">Halaman demo • data dummy</p>
+      <h1 class="text-2xl md:text-3xl font-bold">Project Pembangunan Ruang Sekolah Minggu</h1>
+      <p id="lastUpdate" class="text-sm text-slate-600 mt-1">Memuat…</p>
     </div>
   </header>
 
   <main class="relative max-w-6xl mx-auto p-6 grid gap-6">
+
     <!-- Ringkasan -->
     <section class="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <div class="rounded-2xl p-4 bg-[var(--glass)] backdrop-blur ring-1" style="--tw-ring-color: var(--ring);">
+      <div class="card">
         <div class="text-xs text-slate-500">Dana Diperlukan</div>
-        <div class="text-xl font-semibold">Rp 600.000.000</div>
+        <div id="danaTotal" class="text-xl font-semibold">...</div>
       </div>
-      <div class="rounded-2xl p-4 bg-[var(--glass)] backdrop-blur ring-1" style="--tw-ring-color: var(--ring);">
+      <div class="card">
         <div class="text-xs text-slate-500">Dana Terkumpul</div>
-        <div class="text-xl font-semibold">Rp 20.000.000</div>
+        <div id="totalMasuk" class="text-xl font-semibold">...</div>
       </div>
-      <div class="rounded-2xl p-4 bg-[var(--glass)] backdrop-blur ring-1" style="--tw-ring-color: var(--ring);">
+      <div class="card">
         <div class="text-xs text-slate-500">Kekurangan</div>
-        <div class="text-xl font-semibold">Rp 580.000.000</div>
+        <div id="kekurangan" class="text-xl font-semibold">...</div>
       </div>
-      <div class="rounded-2xl p-4 bg-[var(--glass)] backdrop-blur ring-1" style="--tw-ring-color: var(--ring);">
-        <div class="text-xs text-slate-500">Target Pertama (berjalan)</div>
-        <div class="text-xl font-semibold">Rp 180.000.000</div>
+      <div class="card">
+        <div class="text-xs text-slate-500">Target Pertama</div>
+        <div id="targetPertama" class="text-xl font-semibold">...</div>
       </div>
     </section>
 
-    <!-- Progress keseluruhan -->
+    <!-- Progres total -->
     <section class="rounded-3xl p-5 bg-[var(--glass)] backdrop-blur ring-1" style="--tw-ring-color: var(--ring);">
       <div class="flex items-center justify-between mb-3">
         <h2 class="font-semibold">Progres Penggalangan Dana (Total)</h2>
-        <span class="text-sm text-slate-600">3,33%</span>
+        <span id="totalPctText" class="text-sm text-slate-600">0%</span>
       </div>
       <div class="w-full h-3 rounded-full bg-slate-200/70 overflow-hidden">
-        <div class="h-3 rounded-full bg-emerald-300" style="width:3.33%"></div>
+        <div id="totalBar" class="h-3 rounded-full bg-emerald-300" style="width:0%"></div>
       </div>
-      <div class="mt-2 text-xs text-slate-500">Rp 20.000.000 dari Rp 600.000.000</div>
+      <div id="totalCaption" class="mt-2 text-xs text-slate-500">Rp 0 dari Rp 0</div>
     </section>
 
-    <!-- Progress menuju target pertama -->
+    <!-- Progres target pertama -->
     <section class="rounded-3xl p-5 bg-[var(--glass)] backdrop-blur ring-1" style="--tw-ring-color: var(--ring);">
       <div class="flex items-center justify-between mb-3">
         <h2 class="font-semibold">Progres Target Pertama</h2>
-        <span class="text-sm text-slate-600">11,11%</span>
+        <span id="targetPctText" class="text-sm text-slate-600">0%</span>
       </div>
       <div class="w-full h-3 rounded-full bg-slate-200/70 overflow-hidden">
-        <div class="h-3 rounded-full bg-indigo-300" style="width:11.11%"></div>
+        <div id="targetBar" class="h-3 rounded-full bg-indigo-300" style="width:0%"></div>
       </div>
-      <div class="mt-2 text-xs text-slate-500">Rp 20.000.000 dari Rp 180.000.000</div>
+      <div id="targetCaption" class="mt-2 text-xs text-slate-500">Rp 0 dari Rp 0</div>
     </section>
 
- <!-- Kebutuhan saat ini -->
-    <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div class="rounded-2xl p-4 bg-[var(--glass)] backdrop-blur ring-1" style="--tw-ring-color: var(--ring);">
-        <div class="text-xs text-slate-500">Target pertama berjalan</div>
-        <div class="mt-1 text-lg font-semibold">Rp 180.000.000</div>
-        <div class="mt-3 space-y-1">
-          <div class="w-full h-2 rounded-full bg-slate-200/70 overflow-hidden">
-            <div class="h-2 rounded-full bg-indigo-300" style="width:11.11%"></div>
-          </div>
-          <div class="text-xs text-slate-500">Terkumpul Rp 20.000.000</div>
-        </div>
-        <button class="mt-3 px-4 py-2 rounded-xl bg-indigo-300 hover:bg-indigo-200 text-slate-800 text-sm transition">
+    <!-- Rincian Bulanan -->
+    <section class="rounded-3xl p-5 bg-[var(--glass)] backdrop-blur ring-1" style="--tw-ring-color:var(--ring);">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="font-semibold">Rincian Bulanan</h2>
+        <button onclick="openModal()"
+                class="px-4 py-2 rounded-xl bg-indigo-400 hover:bg-indigo-300 text-slate-800 text-sm font-semibold transition">
           Donasi
         </button>
-      </div>
-
-      <div class="rounded-2xl p-4 bg-[var(--glass)] backdrop-blur ring-1" style="--tw-ring-color: var(--ring);">
-        <div class="text-xs text-slate-500">Paket Bahan #1</div>
-        <div class="mt-1 text-lg font-semibold">Rp 25.000.000</div>
-        <p class="mt-1 text-xs text-slate-600">Semen, pasir, batu kali</p>
-        <button class="mt-3 px-4 py-2 rounded-xl bg-rose-300 hover:bg-rose-200 text-slate-800 text-sm transition">
-          Donasi
-        </button>
-      </div>
-
-      <div class="rounded-2xl p-4 bg-[var(--glass)] backdrop-blur ring-1" style="--tw-ring-color: var(--ring);">
-        <div class="text-xs text-slate-500">Upah Tukang (Mingguan)</div>
-        <div class="mt-1 text-lg font-semibold">Rp 8.000.000</div>
-        <p class="mt-1 text-xs text-slate-600">Target pekan berjalan</p>
-        <button class="mt-3 px-4 py-2 rounded-xl bg-emerald-300 hover:bg-emerald-200 text-slate-800 text-sm transition">
-          Donasi
-        </button>
-      </div>
-    </section>
-
-    <!-- Daftar penyumbang (anonim) -->
-    <section class="rounded-3xl p-5 bg-[var(--glass)] backdrop-blur ring-1" style="--tw-ring-color: var(--ring);">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="font-semibold">Penyumbang Dana (Anonim)</h2>
-        <span class="inline-flex items-center gap-2 text-sm text-slate-600">
-          <span class="inline-block h-2.5 w-2.5 rounded-full bg-rose-300"></span>
-          Total: Rp 20.000.000 • 10 orang
-        </span>
       </div>
       <div class="overflow-x-auto">
         <table class="min-w-full text-sm">
-          <thead>
-            <tr class="text-left text-slate-500">
-              <th class="py-2 pr-4">Nama</th>
-              <th class="py-2 pr-4">Jumlah</th>
+          <thead class="text-slate-600">
+            <tr>
+              <th class="text-left py-2 pr-4">Bulan</th>
+              <th class="text-right py-2 pr-4">PIR</th>
+              <th class="text-right py-2 pr-4">Transfer</th>
+              <th class="text-right py-2 pr-4">Total</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-200/70">
-            <tr><td class="py-2 pr-4">A*****</td><td class="py-2 pr-4">Rp 5.000.000</td></tr>
-            <tr><td class="py-2 pr-4">A*****</td><td class="py-2 pr-4">Rp 3.000.000</td></tr>
-            <tr><td class="py-2 pr-4">A*****</td><td class="py-2 pr-4">Rp 2.500.000</td></tr>
-            <tr><td class="py-2 pr-4">A*****</td><td class="py-2 pr-4">Rp 2.000.000</td></tr>
-            <tr><td class="py-2 pr-4">A*****</td><td class="py-2 pr-4">Rp 2.000.000</td></tr>
-            <tr><td class="py-2 pr-4">A*****</td><td class="py-2 pr-4">Rp 800.000</td></tr>
-            <tr><td class="py-2 pr-4">A*****</td><td class="py-2 pr-4">Rp 1.500.000</td></tr>
-            <tr><td class="py-2 pr-4">A*****</td><td class="py-2 pr-4">Rp 1.200.000</td></tr>
-            <tr><td class="py-2 pr-4">A*****</td><td class="py-2 pr-4">Rp 1.000.000</td></tr>
-            <tr><td class="py-2 pr-4">A*****</td><td class="py-2 pr-4">Rp 1.000.000</td></tr>
-          </tbody>
+          <tbody id="listBulanan" class="divide-y divide-slate-200/70"></tbody>
         </table>
       </div>
-      <p class="mt-3 text-xs text-slate-500">Nama disamarkan. Nilai di atas hanya contoh.</p>
     </section>
 
-   
   </main>
 
   <footer class="relative max-w-6xl mx-auto p-6 text-xs text-slate-500">
-    © 2025 — Demo penggalangan dana pembangunan.
+    © 2025 — Penggalangan Dana
   </footer>
+
+  <!-- Modal Donasi -->
+  <div id="modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center">
+    <div class="bg-white rounded-2xl p-6 max-w-md w-full text-center shadow-xl">
+      <h3 class="text-lg font-bold mb-3">Informasi Donasi</h3>
+      <p class="text-sm text-slate-600 mb-3">Rekening pembangunan gedung sekolah minggu</p>
+      <div class="font-semibold text-lg mb-4">
+        Ac. 1373554433
+	<br>An. Gbi bethel indonesia
+	<br>Bca kcp lembang
+
+      </div>
+      <p class="text-xs text-slate-600 mb-4">
+        Untuk berdonasi, silakan transfer sesuai kerelaan hati.
+        Setelah transfer, konfirmasi ke panitia agar tercatat.
+      </p>
+      <button onclick="closeModal()" class="mt-3 px-4 py-2 rounded-lg bg-slate-700 text-white hover:bg-slate-600">Tutup</button>
+    </div>
+  </div>
+
+  <script>
+        const DB_URL = "https://datatransfer-eb687-default-rtdb.asia-southeast1.firebasedatabase.app/GBISMB34-19C7-4793-B72A-063F232F4C41"; 
+    const bulanIndo = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+
+    const dec64 = s => atob(s);
+    const rupiah = n => "Rp " + Number(n||0).toLocaleString("id-ID");
+    const clampPct = v => isFinite(v) && v>0 ? Math.min(100, Math.max(0, v)) : 0;
+
+    async function loadData(){
+      const [meta, monthly] = await Promise.all([
+        fetch(DB_URL + ".json").then(r=>r.json()).catch(()=>null),
+        fetch(DB_URL + "/totals/monthly.json").then(r=>r.json()).catch(()=>null)
+      ]);
+
+      const ts = meta && meta.lastUpdated ? Number(meta.lastUpdated) : 0;
+      const fmt = ts ? new Date(ts).toLocaleString("id-ID", { dateStyle:"medium", timeStyle:"short", hour12:false, timeZone:"Asia/Jakarta" }) : "-";
+      document.getElementById("lastUpdate").textContent = `Terakhir diperbarui: ${fmt}`;
+
+      const danaTotal = meta?.danaDiperlukan ? Number(dec64(meta.danaDiperlukan)) : 0;
+      const target    = meta?.targetPertama ? Number(dec64(meta.targetPertama))   : 0;
+
+      // hitung total masuk dari monthly
+      let totalMasuk = 0;
+      let rows = [];
+      if(monthly){
+        // urutkan kunci YYYY-MM
+        const keys = Object.keys(monthly).sort(); // naik
+        for(const k of keys){
+          const [y,m] = k.split("-");
+          const pir = monthly[k].PIR ? Number(dec64(monthly[k].PIR)) : 0;
+          const trf = monthly[k].Transfer ? Number(dec64(monthly[k].Transfer)) : 0;
+          const subtotal = pir + trf;
+          totalMasuk += subtotal;
+          rows.push({ y:Number(y), m:Number(m), label:`${bulanIndo[Number(m)-1]} ${y}`, pir, trf, subtotal });
+        }
+      }
+
+      // ringkasan angka
+      document.getElementById("danaTotal").innerText   = rupiah(danaTotal);
+      document.getElementById("totalMasuk").innerText  = rupiah(totalMasuk);
+      document.getElementById("kekurangan").innerText  = rupiah((danaTotal||0) - (totalMasuk||0));
+      document.getElementById("targetPertama").innerText = rupiah(target);
+
+      // progres total
+      const pctTotal = clampPct(danaTotal>0 ? (totalMasuk/danaTotal*100) : 0);
+      document.getElementById("totalPctText").innerText = pctTotal.toFixed(2) + "%";
+      document.getElementById("totalBar").style.width   = pctTotal + "%";
+      document.getElementById("totalCaption").innerText = `${rupiah(totalMasuk)} dari ${rupiah(danaTotal)}`;
+
+      // progres target pertama
+      const pctTarget = clampPct(target>0 ? (totalMasuk/target*100) : 0);
+      document.getElementById("targetPctText").innerText = pctTarget.toFixed(2) + "%";
+      document.getElementById("targetBar").style.width   = pctTarget + "%";
+      document.getElementById("targetCaption").innerText = `${rupiah(totalMasuk)} dari ${rupiah(target)}`;
+
+      // tabel bulanan
+      const tbody = document.getElementById("listBulanan");
+      tbody.innerHTML = "";
+      rows.forEach(r=>{
+        tbody.insertAdjacentHTML("beforeend", `
+          <tr>
+            <td class="py-2 pr-4 text-right">${r.label}</td>
+            <td class="py-2 pr-4 text-right">${rupiah(r.pir)}</td>
+            <td class="py-2 pr-4 text-right">${rupiah(r.trf)}</td>
+            <td class="py-2 pr-4 text-right font-semibold">${rupiah(r.subtotal)}</td>
+          </tr>
+        `);
+      });
+    }
+
+    function openModal(){ const m=document.getElementById("modal"); m.classList.remove("hidden"); m.classList.add("flex"); }
+    function closeModal(){ const m=document.getElementById("modal"); m.classList.add("hidden"); m.classList.remove("flex"); }
+
+    document.addEventListener("DOMContentLoaded", loadData);
+  </script>
 </body>
 </html>
+
