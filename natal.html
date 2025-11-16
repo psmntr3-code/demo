@@ -121,7 +121,7 @@
     flex-direction:column;
     align-items:center;
     text-align:center;
-    max-width:260px;
+    max-width:280px;
   }
   #input-section label{
     font-size:14px;
@@ -129,7 +129,7 @@
     margin-bottom:8px;
   }
   #seatInput{
-    width:140px;
+    width:180px;
     padding:8px 10px;
     font-size:16px;
     border-radius:999px;
@@ -284,7 +284,7 @@
       letter-spacing:.12em;
     }
     #input-section{
-      max-width:260px;
+      max-width:280px;
       width:90%;
     }
   }
@@ -363,13 +363,15 @@
 
   <h1>Perayaan Natal GBI Lembang 2025</h1>
   <div class="subtitle" id="subtitle">
-    Scan tiket atau masukkan nomor kursi (misal: A1, B10, J20).
+    Scan tiket atau masukkan nomor kursi (misal: A1, B10, J20 atau A1-A4).
   </div>
 
   <!-- overlay input di atas layout -->
   <div id="input-overlay">
     <div id="input-section">
-      <label for="seatInput">Masukan nomor kursi (contoh: A1)</label>
+      <label for="seatInput">
+        Masukan nomor kursi (contoh: A1)
+      </label>
       <div>
         <input id="seatInput" type="text" autocomplete="off">
         <button id="assignBtn">Lanjut</button>
@@ -413,11 +415,11 @@
   const COLS = 20;
   const GROUP_SIZE = 10;
 
-  const inputOverlay   = document.getElementById('input-overlay');
-  const seatContainer  = document.getElementById('seat-container');
-  const columnsHeader  = document.getElementById('columns-header');
-  const selectedLabelEl= document.getElementById('selectedSeatLabel');
-  const subtitleEl     = document.getElementById('subtitle');
+  const inputOverlay    = document.getElementById('input-overlay');
+  const seatContainer   = document.getElementById('seat-container');
+  const columnsHeader   = document.getElementById('columns-header');
+  const selectedLabelEl = document.getElementById('selectedSeatLabel');
+  const subtitleEl      = document.getElementById('subtitle');
 
   function buildColumnHeader(){
     for(let c=0;c<COLS;c++){
@@ -461,46 +463,119 @@
     }
   }
 
-  function getSeatFromQuery(){
+  function getSeatQueryRaw(){
     const params = new URLSearchParams(window.location.search);
     let q = params.get('q');
     if(!q) return null;
-    q = q.trim().toUpperCase();
-    return q || null;
+    return q.trim();
   }
 
-  function applySeatSelection(seatId){
-    const seatEl = document.querySelector('[data-seat-id="' + seatId + '"]');
-    if(seatEl){
-      seatEl.classList.add('selected');
-      selectedLabelEl.textContent = seatId;
+  // Parse q string menjadi array seatId (A1, A2, ...)
+  // Mendukung:
+  //   - A1
+  //   - A1-A4 (range di baris yang sama)
+  //   - A1,A4,B2-B4 (kombinasi, dipisah koma)
+  function parseSeatQuery(q){
+    if(!q) return [];
+    q = q.toUpperCase();
+    const parts = q.split(',').map(p => p.trim()).filter(p => p.length>0);
+    const seats = new Set();
+
+    const singleRe = /^([A-Z])(\d+)$/;
+    const rangeRe  = /^([A-Z])(\d+)-([A-Z])?(\d+)$/;
+
+    for(const part of parts){
+      let mRange = part.match(rangeRe);
+      if(mRange){
+        const row1 = mRange[1];
+        const col1 = parseInt(mRange[2], 10);
+        const row2 = mRange[3] ? mRange[3] : row1;
+        const col2 = parseInt(mRange[4], 10);
+
+        if(row1 === row2){
+          const start = Math.min(col1, col2);
+          const end   = Math.max(col1, col2);
+          for(let c=start;c<=end;c++){
+            seats.add(row1 + String(c));
+          }
+        }else{
+          // jika beda row, anggap hanya 2 titik
+          seats.add(row1 + String(col1));
+          seats.add(row2 + String(col2));
+        }
+        continue;
+      }
+
+      let mSingle = part.match(singleRe);
+      if(mSingle){
+        const row = mSingle[1];
+        const col = parseInt(mSingle[2], 10);
+        seats.add(row + String(col));
+      }
+    }
+
+    return Array.from(seats);
+  }
+
+  function applySeatSelection(seatIds){
+    if(!seatIds || seatIds.length===0){
+      selectedLabelEl.textContent = '– (tidak ada yang terbaca)';
+      return;
+    }
+
+    // hapus pilihan lama (kalau ada)
+    document.querySelectorAll('.seat.selected').forEach(el => el.classList.remove('selected'));
+
+    // tandai semua seat yang valid
+    let firstValid = null;
+    seatIds.forEach(id => {
+      const seatEl = document.querySelector('[data-seat-id="' + id + '"]');
+      if(seatEl){
+        seatEl.classList.add('selected');
+        if(!firstValid) firstValid = id;
+      }
+    });
+
+    if(firstValid){
+      if(seatIds.length === 1){
+        selectedLabelEl.textContent = firstValid;
+      }else{
+        selectedLabelEl.textContent = seatIds.join(', ');
+      }
     }else{
-      selectedLabelEl.textContent = seatId + ' (tidak ditemukan di layout)';
+      selectedLabelEl.textContent = seatIds.join(', ') + ' (tidak ditemukan di layout)';
     }
   }
 
   document.getElementById('assignBtn').addEventListener('click', function(){
     let seat = document.getElementById('seatInput').value || '';
-    seat = seat.replace(/\s+/g,'').toUpperCase();
-    if(!/^[A-Z]\d+$/.test(seat)){
-      alert('Format nomor kursi tidak valid. Contoh: A1, B10, J20.');
+    seat = seat.trim();
+    // izinkan huruf, angka, koma, minus, dan spasi
+    if(!/^[A-Z0-9,\-\s]+$/i.test(seat)){
+      alert('Format nomor kursi tidak valid. Contoh: A1, A1-A4, A1,A4.');
+      return;
+    }
+    // cek apakah parsing menghasilkan kursi
+    const parsed = parseSeatQuery(seat);
+    if(parsed.length === 0){
+      alert('Tidak ada nomor kursi yang terbaca. Contoh: A1.');
       return;
     }
     const newUrl = window.location.pathname + '?q=' + encodeURIComponent(seat);
     window.location.href = newUrl;
   });
 
+  // Inisialisasi layout
   buildColumnHeader();
   buildSeats();
 
-  const seatFromQuery = getSeatFromQuery();
-  if(seatFromQuery){
-    // sembunyikan overlay, sembunyikan subtitle, dan sorot kursi
+  const seatQueryRaw = getSeatQueryRaw();
+  if(seatQueryRaw){
     inputOverlay.style.display = 'none';
     if(subtitleEl) subtitleEl.style.display = 'none';
-    applySeatSelection(seatFromQuery);
+    const seatIds = parseSeatQuery(seatQueryRaw);
+    applySeatSelection(seatIds);
   }else{
-    // dari awal: layout sudah tampak, overlay input di atas, belum ada kursi terpilih
     inputOverlay.style.display = 'flex';
     if(subtitleEl) subtitleEl.style.display = 'block';
   }
