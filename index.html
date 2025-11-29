@@ -89,8 +89,9 @@
           <thead class="text-slate-600">
             <tr>
               <th class="text-left py-2 pr-4">Bulan</th>
-              <th class="text-right py-2 pr-4">PIR</th>
-              <th class="text-right py-2 pr-4">Transfer</th>
+              <th class="text-right py-2 pr-4">Persembahan Pembangunan SM</th>
+              <th class="text-right py-2 pr-4">Persembahan Lewat Transfer</th>
+		      <th class="text-right py-2 pr-4">Janji Iman</th>
               <th class="text-right py-2 pr-4">Total</th>
             </tr>
           </thead>
@@ -155,9 +156,10 @@
           const [y,m] = k.split("-");
           const pir = monthly[k].PIR ? Number(dec64(monthly[k].PIR)) : 0;
           const trf = monthly[k].Transfer ? Number(dec64(monthly[k].Transfer)) : 0;
-          const subtotal = pir + trf;
+		  const ji = monthly[k].JanjiIman ? Number(dec64(monthly[k].JanjiIman)) : 0;
+          const subtotal = pir + trf + ji;
           totalMasuk += subtotal;
-          rows.push({ y:Number(y), m:Number(m), label:`${bulanIndo[Number(m)-1]} ${y}`, pir, trf, subtotal });
+          rows.push({ y:Number(y), m:Number(m), label:`${bulanIndo[Number(m)-1]} ${y}`, pir, trf,  ji, subtotal });
         }
       }
 
@@ -201,4 +203,5 @@
   </script>
 </body>
 </html>
+
 
