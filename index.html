@@ -159,40 +159,45 @@
     const rupiah = n => "Rp " + Number(n||0).toLocaleString("id-ID");
     const clampPct = v => isFinite(v) && v>0 ? Math.min(100, Math.max(0, v)) : 0;
 
-    async function loadData(){
+        async function loadData(){
       const [meta, monthly] = await Promise.all([
         fetch(DB_URL + ".json").then(r=>r.json()).catch(()=>null),
         fetch(DB_URL + "/totals/monthly.json").then(r=>r.json()).catch(()=>null)
       ]);
 
       const ts = meta && meta.lastUpdated ? Number(meta.lastUpdated) : 0;
-      const fmt = ts ? new Date(ts).toLocaleString("id-ID", { dateStyle:"medium", timeStyle:"short", hour12:false, timeZone:"Asia/Jakarta" }) : "-";
+      const fmt = ts
+        ? new Date(ts).toLocaleString("id-ID", {
+            dateStyle:"medium",
+            timeStyle:"short",
+            hour12:false,
+            timeZone:"Asia/Jakarta"
+          })
+        : "-";
       document.getElementById("lastUpdate").textContent = `Terakhir diperbarui: ${fmt}`;
 
       const danaTotal = meta?.danaDiperlukan ? Number(dec64(meta.danaDiperlukan)) : 0;
-      const target    = meta?.targetPertama ? Number(dec64(meta.targetPertama))   : 0;
+      const target    = meta?.targetPertama   ? Number(dec64(meta.targetPertama))   : 0;
 
-      // hitung total masuk dari monthly
+      // hitung total masuk dari monthly + siapkan rows (termasuk Janji Iman)
       let totalMasuk = 0;
       let rows = [];
       if (monthly) {
-        // urutkan kunci YYYY-MM
-        const keys = Object.keys(monthly).sort(); // naik
+        const keys = Object.keys(monthly).sort(); // YYYY-MM naik
         for (const k of keys) {
           const [y, m] = k.split("-");
 
-          const pir = monthly[k].PIR ? Number(dec64(monthly[k].PIR)) : 0;
-          const trf = monthly[k].Transfer ? Number(dec64(monthly[k].Transfer)) : 0;
+          const pir = monthly[k].PIR       ? Number(dec64(monthly[k].PIR))       : 0;
+          const trf = monthly[k].Transfer  ? Number(dec64(monthly[k].Transfer))  : 0;
 
           // Janji Iman (realisasi)
           const jiRaw = monthly[k].JanjiIman ? dec64(monthly[k].JanjiIman) : "0";
           const ji = Number(jiRaw) || 0;
 
-          // Target Janji Iman (bisa ada "++" di belakang)
-          const targetJiRaw = monthly[k].TargetJanjiIman ? dec64(monthly[k].TargetJanjiIman) : "0";
-          // ambil angka depannya saja untuk hitung persen
-          const targetJiNum = parseInt(targetJiRaw, 10) || 0;
-          const targetJiHasPlus = targetJiRaw.includes("++");
+          // Target Janji Iman: bisa ada "++" di belakang
+          const targetJiRaw   = monthly[k].TargetJanjiIman ? dec64(monthly[k].TargetJanjiIman) : "0";
+          const targetJiNum   = parseInt(targetJiRaw, 10) || 0;          // dipakai untuk hitung %
+          const targetJiPlus  = targetJiRaw.includes("++");              // hanya untuk tampilan
 
           const subtotal = pir + trf + ji;
           totalMasuk += subtotal;
@@ -205,18 +210,17 @@
             trf,
             ji,
             jiTarget: targetJiNum,
-            jiTargetPlus: targetJiHasPlus,
+            jiTargetPlus: targetJiPlus,
             subtotal
           });
         }
       }
 
-
       // ringkasan angka
-      document.getElementById("danaTotal").innerText   = rupiah(danaTotal);
-      document.getElementById("totalMasuk").innerText  = rupiah(totalMasuk);
-      document.getElementById("kekurangan").innerText  = rupiah((danaTotal||0) - (totalMasuk||0));
-      document.getElementById("targetPertama").innerText = rupiah(target);
+      document.getElementById("danaTotal").innerText      = rupiah(danaTotal);
+      document.getElementById("totalMasuk").innerText     = rupiah(totalMasuk);
+      document.getElementById("kekurangan").innerText     = rupiah((danaTotal||0) - (totalMasuk||0));
+      document.getElementById("targetPertama").innerText  = rupiah(target);
 
       // progres total
       const pctTotal = clampPct(danaTotal>0 ? (totalMasuk/danaTotal*100) : 0);
@@ -230,7 +234,7 @@
       document.getElementById("targetBar").style.width   = pctTarget + "%";
       document.getElementById("targetCaption").innerText = `${rupiah(totalMasuk)} dari ${rupiah(target)}`;
 
-      // tabel bulanan
+      // tabel bulanan (tetap)
       const tbody = document.getElementById("listBulanan");
       tbody.innerHTML = "";
       rows.forEach(r=>{
@@ -239,14 +243,13 @@
             <td class="py-2 pr-4 text-right">${r.label}</td>
             <td class="py-2 pr-4 text-right">${rupiah(r.pir)}</td>
             <td class="py-2 pr-4 text-right">${rupiah(r.trf)}</td>
-			 <td class="py-2 pr-4 text-right">${rupiah(r.ji)}</td>
+            <td class="py-2 pr-4 text-right">${rupiah(r.ji)}</td>
             <td class="py-2 pr-4 text-right font-semibold">${rupiah(r.subtotal)}</td>
           </tr>
         `);
       });
-    }
-      window._janjiImanRows = rows;
-	  // Progres Janji Iman (show/hide, default hanya bulan terakhir)
+
+      // Progres Janji Iman (show/hide, default hanya bulan terakhir)
       const jiSection    = document.getElementById("janjiImanSection");
       const jiSingleEl   = document.getElementById("janjiImanSingle");
       const jiAllEl      = document.getElementById("janjiImanAll");
@@ -256,9 +259,7 @@
 
       if (jiSection && jiSingleEl && jiAllEl) {
         // hanya baris yang punya Janji Iman / target
-        const jiSource = Array.isArray(window._janjiImanRows) ? window._janjiImanRows : [];
-        // hanya baris yang punya Janji Iman / target
-        const jiRows = jiSource.filter(r => (r.ji > 0) || ((r.jiTarget || 0) > 0));
+        const jiRows = rows.filter(r => (r.ji > 0) || ((r.jiTarget || 0) > 0));
 
         if (!jiRows.length) {
           jiSection.classList.add("hidden");
@@ -328,7 +329,8 @@
           }
         }
       }
-	  
+    }
+
     function openModal(){ const m=document.getElementById("modal"); m.classList.remove("hidden"); m.classList.add("flex"); }
     function closeModal(){ const m=document.getElementById("modal"); m.classList.add("hidden"); m.classList.remove("flex"); }
 
@@ -336,6 +338,7 @@
   </script>
 </body>
 </html>
+
 
 
 
