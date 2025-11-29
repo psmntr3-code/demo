@@ -75,6 +75,32 @@
       <div id="targetCaption" class="mt-2 text-xs text-slate-500">Rp 0 dari Rp 0</div>
     </section>
 
+	 <!-- Progres Janji Iman (per bulan) -->
+    <section id="janjiImanSection" class="rounded-3xl p-5 bg-[var(--glass)] backdrop-blur ring-1" style="--tw-ring-color: var(--ring);">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="font-semibold">Progres Janji Iman</h2>
+        <button id="btnToggleJanjiIman" type="button"
+                class="flex items-center gap-1 text-xs text-slate-600 hover:text-slate-800">
+          <span id="janjiImanToggleText">Tampilkan semua bulan</span>
+          <svg id="janjiImanToggleIcon" class="w-3 h-3 transition-transform" viewBox="0 0 20 20" fill="none"
+               xmlns="http://www.w3.org/2000/svg">
+            <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="1.5"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- hanya bulan terakhir (default) -->
+      <div id="janjiImanSingle" class="space-y-2 text-xs">
+        <!-- diisi via JS -->
+      </div>
+
+      <!-- semua bulan (disembunyikan default) -->
+      <div id="janjiImanAll" class="space-y-3 mt-4 hidden">
+        <!-- diisi via JS -->
+      </div>
+    </section>
+	  
     <!-- Rincian Bulanan -->
     <section class="rounded-3xl p-5 bg-[var(--glass)] backdrop-blur ring-1" style="--tw-ring-color:var(--ring);">
       <div class="flex items-center justify-between mb-3">
@@ -149,19 +175,42 @@
       // hitung total masuk dari monthly
       let totalMasuk = 0;
       let rows = [];
-      if(monthly){
+      if (monthly) {
         // urutkan kunci YYYY-MM
         const keys = Object.keys(monthly).sort(); // naik
-        for(const k of keys){
-          const [y,m] = k.split("-");
+        for (const k of keys) {
+          const [y, m] = k.split("-");
+
           const pir = monthly[k].PIR ? Number(dec64(monthly[k].PIR)) : 0;
           const trf = monthly[k].Transfer ? Number(dec64(monthly[k].Transfer)) : 0;
-		  const ji = monthly[k].JanjiIman ? Number(dec64(monthly[k].JanjiIman)) : 0;
+
+          // Janji Iman (realisasi)
+          const jiRaw = monthly[k].JanjiIman ? dec64(monthly[k].JanjiIman) : "0";
+          const ji = Number(jiRaw) || 0;
+
+          // Target Janji Iman (bisa ada "++" di belakang)
+          const targetJiRaw = monthly[k].TargetJanjiIman ? dec64(monthly[k].TargetJanjiIman) : "0";
+          // ambil angka depannya saja untuk hitung persen
+          const targetJiNum = parseInt(targetJiRaw, 10) || 0;
+          const targetJiHasPlus = targetJiRaw.includes("++");
+
           const subtotal = pir + trf + ji;
           totalMasuk += subtotal;
-          rows.push({ y:Number(y), m:Number(m), label:`${bulanIndo[Number(m)-1]} ${y}`, pir, trf,  ji, subtotal });
+
+          rows.push({
+            y: Number(y),
+            m: Number(m),
+            label: `${bulanIndo[Number(m) - 1]} ${y}`,
+            pir,
+            trf,
+            ji,
+            jiTarget: targetJiNum,
+            jiTargetPlus: targetJiHasPlus,
+            subtotal
+          });
         }
       }
+
 
       // ringkasan angka
       document.getElementById("danaTotal").innerText   = rupiah(danaTotal);
@@ -197,6 +246,87 @@
       });
     }
 
+	  // Progres Janji Iman (show/hide, default hanya bulan terakhir)
+      const jiSection    = document.getElementById("janjiImanSection");
+      const jiSingleEl   = document.getElementById("janjiImanSingle");
+      const jiAllEl      = document.getElementById("janjiImanAll");
+      const jiToggleBtn  = document.getElementById("btnToggleJanjiIman");
+      const jiToggleText = document.getElementById("janjiImanToggleText");
+      const jiToggleIcon = document.getElementById("janjiImanToggleIcon");
+
+      if (jiSection && jiSingleEl && jiAllEl) {
+        // hanya baris yang punya Janji Iman / target
+        const jiRows = rows.filter(r => (r.ji > 0) || (r.jiTarget || 0) > 0);
+
+        if (!jiRows.length) {
+          jiSection.classList.add("hidden");
+        } else {
+          // bulan terakhir
+          const lastJi = jiRows[jiRows.length - 1];
+          const pctLast = clampPct(
+            lastJi.jiTarget > 0 ? (lastJi.ji / lastJi.jiTarget * 100) : 0
+          );
+
+          const lastTargetLabel =
+            `${rupiah(lastJi.jiTarget)}${lastJi.jiTargetPlus ? "++" : ""}`;
+
+          jiSingleEl.innerHTML = `
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="font-medium text-sm">${lastJi.label}</div>
+                <div class="text-[11px] text-slate-500">
+                  ${rupiah(lastJi.ji)} dari ${lastTargetLabel}
+                </div>
+              </div>
+              <div class="text-xs font-semibold text-slate-700">
+                ${pctLast.toFixed(2)}%
+              </div>
+            </div>
+            <div class="w-full h-2 rounded-full bg-slate-200/70 overflow-hidden mt-2">
+              <div class="h-2 rounded-full bg-rose-300" style="width:${pctLast}%;"></div>
+            </div>
+          `;
+
+          // semua bulan
+          let allHtml = "";
+          jiRows.forEach(r => {
+            const pct = clampPct(
+              r.jiTarget > 0 ? (r.ji / r.jiTarget * 100) : 0
+            );
+            const targetLabel =
+              `${rupiah(r.jiTarget)}${r.jiTargetPlus ? "++" : ""}`;
+
+            allHtml += `
+              <div class="pt-2 border-t border-slate-200/60">
+                <div class="flex items-center justify-between">
+                  <div class="text-xs">${r.label}</div>
+                  <div class="text-[11px] text-slate-600">${pct.toFixed(2)}%</div>
+                </div>
+                <div class="w-full h-1.5 rounded-full bg-slate-200/70 overflow-hidden mt-1">
+                  <div class="h-1.5 rounded-full bg-rose-300" style="width:${pct}%;"></div>
+                </div>
+                <div class="mt-1 text-[11px] text-slate-500">
+                  ${rupiah(r.ji)} dari ${targetLabel}
+                </div>
+              </div>
+            `;
+          });
+          jiAllEl.innerHTML = allHtml;
+
+          // toggle show/hide
+          if (jiToggleBtn && jiToggleText && jiToggleIcon) {
+            jiToggleBtn.addEventListener("click", () => {
+              const isHidden = jiAllEl.classList.contains("hidden");
+              jiAllEl.classList.toggle("hidden");
+              jiToggleText.textContent = isHidden
+                ? "Sembunyikan bulan lain"
+                : "Tampilkan semua bulan";
+              jiToggleIcon.classList.toggle("rotate-180", isHidden);
+            });
+          }
+        }
+      }
+	  
     function openModal(){ const m=document.getElementById("modal"); m.classList.remove("hidden"); m.classList.add("flex"); }
     function closeModal(){ const m=document.getElementById("modal"); m.classList.add("hidden"); m.classList.remove("flex"); }
 
@@ -204,6 +334,7 @@
   </script>
 </body>
 </html>
+
 
 
 
