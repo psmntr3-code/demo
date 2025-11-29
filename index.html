@@ -152,7 +152,7 @@
   </div>
 
   <script>
-        const DB_URL = "https://datatransfer-eb687-default-rtdb.asia-southeast1.firebasedatabase.app/GBISMB34-19C7-4793-B72A-063F232F4C41"; 
+    const DB_URL = "https://datatransfer-eb687-default-rtdb.asia-southeast1.firebasedatabase.app/GBISMB34-19C7-4793-B72A-063F232F4C41"; 
     const bulanIndo = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
 
     const dec64 = s => atob(s);
@@ -245,7 +245,7 @@
         `);
       });
     }
-
+      window._janjiImanRows = rows;
 	  // Progres Janji Iman (show/hide, default hanya bulan terakhir)
       const jiSection    = document.getElementById("janjiImanSection");
       const jiSingleEl   = document.getElementById("janjiImanSingle");
@@ -256,7 +256,9 @@
 
       if (jiSection && jiSingleEl && jiAllEl) {
         // hanya baris yang punya Janji Iman / target
-        const jiRows = rows.filter(r => (r.ji > 0) || (r.jiTarget || 0) > 0);
+        const jiSource = Array.isArray(window._janjiImanRows) ? window._janjiImanRows : [];
+        // hanya baris yang punya Janji Iman / target
+        const jiRows = jiSource.filter(r => (r.ji > 0) || ((r.jiTarget || 0) > 0));
 
         if (!jiRows.length) {
           jiSection.classList.add("hidden");
@@ -334,6 +336,7 @@
   </script>
 </body>
 </html>
+
 
 
 
