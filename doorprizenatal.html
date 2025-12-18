@@ -32,6 +32,13 @@
       border-radius: 12px;
       max-width: 360px;
       box-shadow: 0 0 18px #ffcc00;
+
+      /* --- PATCH: make 1 row --- */
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      max-width: 900px; /* allow 3 columns */
     }
 
     .settings label {
@@ -46,6 +53,22 @@
       font-size: 26px;
       text-align: center;
     }
+
+    /* --- PATCH: left / center / right blocks --- */
+    .settings .left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-align: left;
+    }
+    .settings .left label { margin: 0; }
+    .settings .rolling {
+      margin: 0;
+      font-size: 96px;
+      flex: 1;
+      text-align: center;
+    }
+    .settings .controls { margin: 0; }
 
     .controls button {
       background: linear-gradient(180deg, #ffcc00, #ff9900);
@@ -86,7 +109,7 @@
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
       gap: 18px;
-      max-width: 1200px;
+      max-width: 900px;
       justify-content: center;
     }
 
@@ -108,19 +131,25 @@
 </head>
 <body>
 
-  <h1>DOORPRIZE PERAYAAN NATAL<br>GBI LEMBANG 2025</h1>
+  <h1>DOORPRIZE PERAYAAN NATAL GBI LEMBANG 2025</h1>
   <div class="subtitle">Merry Christmas 🎄 & Tuhan Memberkati</div>
 
+  <!-- PATCH: settings jadi 1 baris (kiri: jumlah, tengah: rolling, kanan: tombol) -->
   <div class="settings">
-    <label>Jumlah Doorprize</label>
-    <input type="number" id="pickCount" value="20" min="1">
+    <div class="left">
+      <label for="pickCount">Jumlah Doorprize</label>
+      <input type="number" id="pickCount" value="20" min="1">
+    </div>
+
+    <div id="rolling" class="rolling"></div>
+
+    <div class="controls">
+      <button onclick="startDraw()">🎲 MULAI UNDIAN</button>
+    </div>
   </div>
 
-  <div class="controls">
-    <button onclick="startDraw()">🎲 MULAI UNDIAN</button>
-  </div>
-
-  <div id="rolling" class="rolling"></div>
+  <!-- PATCH: rolling dipindah ke dalam settings, jadi yang ini dihapus -->
+  <!-- <div id="rolling" class="rolling"></div> -->
 
   <div class="result-wrapper">
     <div class="result" id="result"></div>
