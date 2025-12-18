@@ -2,185 +2,229 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <title>Doorprize Perayaan Natal GBI Lembang 2025</title>
+  <title>DOORPRIZE PERAYAAN NATAL GBI LEMBANG 2025</title>
   <style>
     body {
       background: radial-gradient(circle at top, #2b1055, #000);
       color: #ffe66d;
       font-family: 'Courier New', monospace;
       text-align: center;
-      padding: 30px;
+      padding: 20px;
+      margin: 0;
     }
 
     h1 {
-      font-size: 42px;
-      text-shadow: 0 0 10px #ffcc00;
-      margin-bottom: 5px;
+      font-size: 48px;
+      text-shadow: 0 0 15px #ffcc00;
+      margin: 10px 0 5px;
     }
 
     .subtitle {
       color: #fff;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
+      font-size: 20px;
     }
 
     .settings {
-      margin: 20px auto;
+      margin: 10px auto 15px;
       background: rgba(0,0,0,0.6);
-      padding: 15px;
+      padding: 12px;
       border-radius: 10px;
-      max-width: 320px;
+      max-width: 360px;
       box-shadow: 0 0 15px #ffcc00;
     }
 
     .settings label {
       display: block;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       color: #fff;
-      font-size: 18px;
+      font-size: 20px;
     }
 
     .settings input {
-      width: 100px;
-      font-size: 20px;
+      width: 120px;
+      font-size: 24px;
       text-align: center;
     }
 
-    button {
+    .controls button {
       background: linear-gradient(180deg, #ffcc00, #ff9900);
       border: none;
-      padding: 15px 35px;
+      padding: 14px 28px;
       font-size: 22px;
       cursor: pointer;
       border-radius: 8px;
       font-weight: bold;
       box-shadow: 0 0 15px #ffcc00;
-      margin-top: 15px;
+      margin: 6px;
     }
 
-    button:hover { transform: scale(1.05); }
+    .controls button:hover { transform: scale(1.05); }
 
     .countdown {
-      font-size: 90px;
-      margin-top: 25px;
-      text-shadow: 0 0 25px red;
+      font-size: 120px;
+      margin-top: 15px;
+      text-shadow: 0 0 30px red;
       animation: pulse 1s infinite;
     }
 
     @keyframes pulse {
       0% { transform: scale(1); }
-      50% { transform: scale(1.25); }
+      50% { transform: scale(1.3); }
       100% { transform: scale(1); }
     }
 
+    .rolling {
+      font-size: 80px;
+      margin-top: 20px;
+      color: #00ffcc;
+      text-shadow: 0 0 25px #00ffcc;
+      animation: flicker 0.15s infinite;
+    }
+
+    @keyframes flicker {
+      0% { opacity: 1; }
+      50% { opacity: 0.6; }
+      100% { opacity: 1; }
+    }
+
     .result {
-      margin-top: 35px;
+      margin-top: 25px;
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-      gap: 12px;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 16px;
     }
 
     .card {
       background: #111;
-      border: 2px solid #ffcc00;
-      border-radius: 6px;
-      padding: 10px;
-      font-size: 18px;
-      box-shadow: 0 0 10px #ffcc00;
-      animation: pop 0.5s ease-out;
+      border: 3px solid #ffcc00;
+      border-radius: 10px;
+      padding: 18px 10px;
+      font-size: 32px;
+      box-shadow: 0 0 15px #ffcc00;
+      animation: pop 0.6s ease-out;
     }
 
     @keyframes pop {
-      from { transform: scale(0.5) rotate(-15deg); opacity: 0; }
+      from { transform: scale(0.3) rotate(-20deg); opacity: 0; }
       to { transform: scale(1) rotate(0); opacity: 1; }
     }
   </style>
 </head>
 <body>
 
-  <h1>🎁 DOORPRIZE PERAYAAN NATAL GBI LEMBANG 2025 🎁</h1>
-  <div class="subtitle">Merry Christmas 🎄 & Happy Celebration</div>
+  <h1>DOORPRIZE PERAYAAN NATAL<br>GBI LEMBANG 2025</h1>
+  <div class="subtitle">Merry Christmas 🎄 & Tuhan Memberkati</div>
 
   <div class="settings">
     <label>Jumlah Doorprize</label>
-    <input type="number" id="pickCount" value="60" min="1">
+    <input type="number" id="pickCount" value="20" min="1">
   </div>
 
-  <button onclick="startDraw()">🎲 MULAI UNDIAN 🎲</button>
+  <div class="controls">
+    <button onclick="startDraw()">🎲 MULAI UNDIAN</button>
+  </div>
 
   <div id="countdown" class="countdown"></div>
+  <div id="rolling" class="rolling"></div>
   <div class="result" id="result"></div>
 
-  <!-- VOICE COUNTDOWN -->
+  <!-- AUDIO -->
   <audio id="three" src="https://actions.google.com/sounds/v1/human_voices/three.ogg"></audio>
   <audio id="two" src="https://actions.google.com/sounds/v1/human_voices/two.ogg"></audio>
   <audio id="one" src="https://actions.google.com/sounds/v1/human_voices/one.ogg"></audio>
+  <audio id="rollSound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
   <audio id="drawSound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
 
   <script>
     /* =============================
        DAFTAR NOMOR KURSI MANUAL
-       SESUAI LAYOUT ASLI
     ============================== */
     const nomorKursi = [
-      // A - O (1-20)
-      ...'ABCDEFGHIJKLMNO'.split('').flatMap(l => 
-        Array.from({length:20}, (_,i)=> `${l}${String(i+1).padStart(2,'0')}`)
-      ),
-      // P - R kiri (1-7)
-      ...'PQR'.split('').flatMap(l => 
-        Array.from({length:7}, (_,i)=> `${l}${String(i+1).padStart(2,'0')}`)
-      ),
-      // P - R kanan (8-13)
-      ...'PQR'.split('').flatMap(l => 
-        Array.from({length:6}, (_,i)=> `${l}${String(i+8).padStart(2,'0')}`)
-      )
+      ...'ABCDEFGHIJKLMNO'.split('').flatMap(l => Array.from({length:20}, (_,i)=> `${l}${String(i+1).padStart(2,'0')}`)),
+      ...'PQR'.split('').flatMap(l => Array.from({length:7}, (_,i)=> `${l}${String(i+1).padStart(2,'0')}`)),
+      ...'PQR'.split('').flatMap(l => Array.from({length:6}, (_,i)=> `${l}${String(i+8).padStart(2,'0')}`))
     ];
 
-    function shuffle(array) {
-      for (let i = array.length - 1; i > 0; i--) {
+    let available = [...nomorKursi]; // anti-duplikat
+    let winners = [];
+
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
+        [arr[i], arr[j]] = [arr[j], arr[i]];
       }
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
     }
 
     function startDraw() {
       document.getElementById('result').innerHTML = '';
+      document.getElementById('rolling').textContent = '';
       const cd = document.getElementById('countdown');
       const sounds = [three, two, one];
       let i = 0;
 
-      cd.textContent = '3';
-      sounds[0].play();
-
+      cd.textContent = '3'; sounds[0].play();
       const interval = setInterval(() => {
         i++;
         if (i < 3) {
           cd.textContent = 3 - i;
-          sounds[i].currentTime = 0;
           sounds[i].play();
         } else {
           clearInterval(interval);
-          cd.textContent = '🎉';
-          draw();
+          cd.textContent = '';
+          startRolling();
         }
       }, 1000);
     }
 
+    function startRolling() {
+      const rollingEl = document.getElementById('rolling');
+      let count = 0;
+      rollSound.loop = true; rollSound.play();
+
+      const rollInterval = setInterval(() => {
+        shuffle(available);
+        rollingEl.textContent = available[0];
+        count++;
+        if (count > 25) {
+          clearInterval(rollInterval);
+          rollSound.pause(); rollSound.currentTime = 0;
+          rollingEl.textContent = '🎉';
+          draw();
+        }
+      }, 120);
+    }
+
     function draw() {
       const pickCount = parseInt(document.getElementById('pickCount').value);
-      const data = [...nomorKursi];
-      shuffle(data);
-
-      const selected = data.slice(0, pickCount);
-      const resultDiv = document.getElementById('result');
+      shuffle(available);
+      const selected = available.splice(0, pickCount);
+      winners.push(...selected);
       drawSound.play();
 
+      const resultDiv = document.getElementById('result');
       selected.forEach(n => {
         const div = document.createElement('div');
         div.className = 'card';
         div.textContent = n;
         resultDiv.appendChild(div);
       });
+    }
+
+    function exportExcel() {
+      if (winners.length === 0) return alert('Belum ada pemenang');
+      let csv = 'No,Nomor Kursi\n';
+      winners.forEach((w,i)=> csv += `${i+1},${w}\n`);
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'Pemenang_Doorprize_GBI_Lembang_2025.csv';
+      a.click();
     }
   </script>
 
