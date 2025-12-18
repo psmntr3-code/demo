@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <title>Undian Doorprize Retro</title>
+  <title>Doorprize Natal GBI Lembang 2025</title>
   <style>
     body {
       background: radial-gradient(circle at top, #2b1055, #000);
@@ -10,13 +10,17 @@
       font-family: 'Courier New', monospace;
       text-align: center;
       padding: 30px;
-      overflow-x: hidden;
     }
 
     h1 {
       font-size: 42px;
       text-shadow: 0 0 10px #ffcc00;
-      margin-bottom: 10px;
+      margin-bottom: 5px;
+    }
+
+    .subtitle {
+      color: #fff;
+      margin-bottom: 20px;
     }
 
     .settings {
@@ -24,27 +28,28 @@
       background: rgba(0,0,0,0.6);
       padding: 15px;
       border-radius: 10px;
-      max-width: 400px;
+      max-width: 320px;
       box-shadow: 0 0 15px #ffcc00;
     }
 
     .settings label {
       display: block;
-      margin: 10px 0 5px;
+      margin-bottom: 8px;
       color: #fff;
+      font-size: 18px;
     }
 
     .settings input {
-      width: 80px;
-      font-size: 18px;
+      width: 100px;
+      font-size: 20px;
       text-align: center;
     }
 
     button {
       background: linear-gradient(180deg, #ffcc00, #ff9900);
       border: none;
-      padding: 15px 30px;
-      font-size: 20px;
+      padding: 15px 35px;
+      font-size: 22px;
       cursor: pointer;
       border-radius: 8px;
       font-weight: bold;
@@ -55,20 +60,20 @@
     button:hover { transform: scale(1.05); }
 
     .countdown {
-      font-size: 80px;
-      margin-top: 30px;
-      text-shadow: 0 0 20px red;
+      font-size: 90px;
+      margin-top: 25px;
+      text-shadow: 0 0 25px red;
       animation: pulse 1s infinite;
     }
 
     @keyframes pulse {
       0% { transform: scale(1); }
-      50% { transform: scale(1.2); }
+      50% { transform: scale(1.25); }
       100% { transform: scale(1); }
     }
 
     .result {
-      margin-top: 30px;
+      margin-top: 35px;
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
       gap: 12px;
@@ -81,24 +86,22 @@
       padding: 10px;
       font-size: 18px;
       box-shadow: 0 0 10px #ffcc00;
-      animation: pop 0.4s ease-out;
+      animation: pop 0.5s ease-out;
     }
 
     @keyframes pop {
-      from { transform: scale(0.6) rotate(-10deg); opacity: 0; }
+      from { transform: scale(0.5) rotate(-15deg); opacity: 0; }
       to { transform: scale(1) rotate(0); opacity: 1; }
     }
   </style>
 </head>
 <body>
 
-  <h1>🎁 UNDIAN DOORPRIZE 🎁</h1>
+  <h1>🎁 DOORPRIZE NATAL GBI LEMBANG 2025 🎁</h1>
+  <div class="subtitle">Merry Christmas 🎄 & Happy Celebration</div>
 
   <div class="settings">
-    <label>Jumlah Kursi per Huruf</label>
-    <input type="number" id="seatCount" value="20" min="1">
-
-    <label>Jumlah Nomor Terpilih</label>
+    <label>Jumlah Doorprize</label>
     <input type="number" id="pickCount" value="60" min="1">
   </div>
 
@@ -107,21 +110,31 @@
   <div id="countdown" class="countdown"></div>
   <div class="result" id="result"></div>
 
-  <!-- SOUND EFFECTS -->
-  <audio id="tickSound" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
+  <!-- VOICE COUNTDOWN -->
+  <audio id="three" src="https://actions.google.com/sounds/v1/human_voices/three.ogg"></audio>
+  <audio id="two" src="https://actions.google.com/sounds/v1/human_voices/two.ogg"></audio>
+  <audio id="one" src="https://actions.google.com/sounds/v1/human_voices/one.ogg"></audio>
   <audio id="drawSound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
 
   <script>
-    function generateNumbers(seatPerLetter) {
-      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-      const list = [];
-      for (let l of letters) {
-        for (let i = 1; i <= seatPerLetter; i++) {
-          list.push(l + i);
-        }
-      }
-      return list;
-    }
+    /* =============================
+       DAFTAR NOMOR KURSI MANUAL
+       SESUAI LAYOUT ASLI
+    ============================== */
+    const nomorKursi = [
+      // A - O (1-20)
+      ...'ABCDEFGHIJKLMNO'.split('').flatMap(l => 
+        Array.from({length:20}, (_,i)=> `${l}${String(i+1).padStart(2,'0')}`)
+      ),
+      // P - R kiri (1-7)
+      ...'PQR'.split('').flatMap(l => 
+        Array.from({length:7}, (_,i)=> `${l}${String(i+1).padStart(2,'0')}`)
+      ),
+      // P - R kanan (8-13)
+      ...'PQR'.split('').flatMap(l => 
+        Array.from({length:6}, (_,i)=> `${l}${String(i+8).padStart(2,'0')}`)
+      )
+    ];
 
     function shuffle(array) {
       for (let i = array.length - 1; i > 0; i--) {
@@ -132,38 +145,34 @@
 
     function startDraw() {
       document.getElementById('result').innerHTML = '';
-      const countdownEl = document.getElementById('countdown');
-      const tick = document.getElementById('tickSound');
-      let count = 3;
+      const cd = document.getElementById('countdown');
+      const sounds = [three, two, one];
+      let i = 0;
 
-      countdownEl.textContent = count;
-      tick.play();
+      cd.textContent = '3';
+      sounds[0].play();
 
       const interval = setInterval(() => {
-        count--;
-        if (count > 0) {
-          countdownEl.textContent = count;
-          tick.currentTime = 0;
-          tick.play();
+        i++;
+        if (i < 3) {
+          cd.textContent = 3 - i;
+          sounds[i].currentTime = 0;
+          sounds[i].play();
         } else {
           clearInterval(interval);
-          countdownEl.textContent = '🎉';
+          cd.textContent = '🎉';
           draw();
         }
       }, 1000);
     }
 
     function draw() {
-      const seatPerLetter = parseInt(document.getElementById('seatCount').value);
       const pickCount = parseInt(document.getElementById('pickCount').value);
+      const data = [...nomorKursi];
+      shuffle(data);
 
-      const numbers = generateNumbers(seatPerLetter);
-      shuffle(numbers);
-
-      const selected = numbers.slice(0, pickCount);
+      const selected = data.slice(0, pickCount);
       const resultDiv = document.getElementById('result');
-      const drawSound = document.getElementById('drawSound');
-
       drawSound.play();
 
       selected.forEach(n => {
