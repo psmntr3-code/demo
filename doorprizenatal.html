@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Undian Doorprize Retro</title>
+  <style>
+    body {
+      background: radial-gradient(circle at top, #2b1055, #000);
+      color: #ffe66d;
+      font-family: 'Courier New', monospace;
+      text-align: center;
+      padding: 30px;
+      overflow-x: hidden;
+    }
+
+    h1 {
+      font-size: 42px;
+      text-shadow: 0 0 10px #ffcc00;
+      margin-bottom: 10px;
+    }
+
+    .settings {
+      margin: 20px auto;
+      background: rgba(0,0,0,0.6);
+      padding: 15px;
+      border-radius: 10px;
+      max-width: 400px;
+      box-shadow: 0 0 15px #ffcc00;
+    }
+
+    .settings label {
+      display: block;
+      margin: 10px 0 5px;
+      color: #fff;
+    }
+
+    .settings input {
+      width: 80px;
+      font-size: 18px;
+      text-align: center;
+    }
+
+    button {
+      background: linear-gradient(180deg, #ffcc00, #ff9900);
+      border: none;
+      padding: 15px 30px;
+      font-size: 20px;
+      cursor: pointer;
+      border-radius: 8px;
+      font-weight: bold;
+      box-shadow: 0 0 15px #ffcc00;
+      margin-top: 15px;
+    }
+
+    button:hover { transform: scale(1.05); }
+
+    .countdown {
+      font-size: 80px;
+      margin-top: 30px;
+      text-shadow: 0 0 20px red;
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+
+    .result {
+      margin-top: 30px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      background: #111;
+      border: 2px solid #ffcc00;
+      border-radius: 6px;
+      padding: 10px;
+      font-size: 18px;
+      box-shadow: 0 0 10px #ffcc00;
+      animation: pop 0.4s ease-out;
+    }
+
+    @keyframes pop {
+      from { transform: scale(0.6) rotate(-10deg); opacity: 0; }
+      to { transform: scale(1) rotate(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🎁 UNDIAN DOORPRIZE 🎁</h1>
+
+  <div class="settings">
+    <label>Jumlah Kursi per Huruf</label>
+    <input type="number" id="seatCount" value="20" min="1">
+
+    <label>Jumlah Nomor Terpilih</label>
+    <input type="number" id="pickCount" value="60" min="1">
+  </div>
+
+  <button onclick="startDraw()">🎲 MULAI UNDIAN 🎲</button>
+
+  <div id="countdown" class="countdown"></div>
+  <div class="result" id="result"></div>
+
+  <!-- SOUND EFFECTS -->
+  <audio id="tickSound" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
+  <audio id="drawSound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
+
+  <script>
+    function generateNumbers(seatPerLetter) {
+      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      const list = [];
+      for (let l of letters) {
+        for (let i = 1; i <= seatPerLetter; i++) {
+          list.push(l + i);
+        }
+      }
+      return list;
+    }
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+
+    function startDraw() {
+      document.getElementById('result').innerHTML = '';
+      const countdownEl = document.getElementById('countdown');
+      const tick = document.getElementById('tickSound');
+      let count = 3;
+
+      countdownEl.textContent = count;
+      tick.play();
+
+      const interval = setInterval(() => {
+        count--;
+        if (count > 0) {
+          countdownEl.textContent = count;
+          tick.currentTime = 0;
+          tick.play();
+        } else {
+          clearInterval(interval);
+          countdownEl.textContent = '🎉';
+          draw();
+        }
+      }, 1000);
+    }
+
+    function draw() {
+      const seatPerLetter = parseInt(document.getElementById('seatCount').value);
+      const pickCount = parseInt(document.getElementById('pickCount').value);
+
+      const numbers = generateNumbers(seatPerLetter);
+      shuffle(numbers);
+
+      const selected = numbers.slice(0, pickCount);
+      const resultDiv = document.getElementById('result');
+      const drawSound = document.getElementById('drawSound');
+
+      drawSound.play();
+
+      selected.forEach(n => {
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.textContent = n;
+        resultDiv.appendChild(div);
+      });
+    }
+  </script>
+
+</body>
+</html>
