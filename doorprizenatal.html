@@ -15,23 +15,23 @@
 
     h1 {
       font-size: 48px;
-      text-shadow: 0 0 15px #ffcc00;
+      text-shadow: 0 0 18px #ffcc00;
       margin: 10px 0 5px;
     }
 
     .subtitle {
       color: #fff;
-      margin-bottom: 15px;
+      margin-bottom: 18px;
       font-size: 20px;
     }
 
     .settings {
-      margin: 10px auto 15px;
+      margin: 10px auto 18px;
       background: rgba(0,0,0,0.6);
-      padding: 12px;
-      border-radius: 10px;
+      padding: 14px;
+      border-radius: 12px;
       max-width: 360px;
-      box-shadow: 0 0 15px #ffcc00;
+      box-shadow: 0 0 18px #ffcc00;
     }
 
     .settings label {
@@ -43,70 +43,65 @@
 
     .settings input {
       width: 120px;
-      font-size: 24px;
+      font-size: 26px;
       text-align: center;
     }
 
     .controls button {
       background: linear-gradient(180deg, #ffcc00, #ff9900);
       border: none;
-      padding: 14px 28px;
+      padding: 14px 30px;
       font-size: 22px;
       cursor: pointer;
-      border-radius: 8px;
+      border-radius: 10px;
       font-weight: bold;
-      box-shadow: 0 0 15px #ffcc00;
+      box-shadow: 0 0 18px #ffcc00;
       margin: 6px;
     }
 
-    .controls button:hover { transform: scale(1.05); }
-
-    .countdown {
-      font-size: 120px;
-      margin-top: 15px;
-      text-shadow: 0 0 30px red;
-      animation: pulse 1s infinite;
-    }
-
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.3); }
-      100% { transform: scale(1); }
-    }
+    .controls button:hover { transform: scale(1.07); }
 
     .rolling {
-      font-size: 80px;
-      margin-top: 20px;
+      font-size: 96px;
+      margin: 28px 0 10px;
       color: #00ffcc;
-      text-shadow: 0 0 25px #00ffcc;
+      text-shadow: 0 0 30px #00ffcc;
       animation: flicker 0.15s infinite;
     }
 
     @keyframes flicker {
       0% { opacity: 1; }
-      50% { opacity: 0.6; }
+      50% { opacity: 0.55; }
       100% { opacity: 1; }
+    }
+
+    .result-wrapper {
+      display: flex;
+      justify-content: center;
+      width: 100%;
     }
 
     .result {
       margin-top: 25px;
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 18px;
+      max-width: 1200px;
+      justify-content: center;
     }
 
     .card {
       background: #111;
       border: 3px solid #ffcc00;
-      border-radius: 10px;
-      padding: 18px 10px;
-      font-size: 32px;
-      box-shadow: 0 0 15px #ffcc00;
+      border-radius: 14px;
+      padding: 22px 10px;
+      font-size: 34px;
+      box-shadow: 0 0 18px #ffcc00;
       animation: pop 0.6s ease-out;
     }
 
     @keyframes pop {
-      from { transform: scale(0.3) rotate(-20deg); opacity: 0; }
+      from { transform: scale(0.25) rotate(-20deg); opacity: 0; }
       to { transform: scale(1) rotate(0); opacity: 1; }
     }
   </style>
@@ -125,14 +120,13 @@
     <button onclick="startDraw()">🎲 MULAI UNDIAN</button>
   </div>
 
-  <div id="countdown" class="countdown"></div>
   <div id="rolling" class="rolling"></div>
-  <div class="result" id="result"></div>
+
+  <div class="result-wrapper">
+    <div class="result" id="result"></div>
+  </div>
 
   <!-- AUDIO -->
-  <audio id="three" src="https://actions.google.com/sounds/v1/human_voices/three.ogg"></audio>
-  <audio id="two" src="https://actions.google.com/sounds/v1/human_voices/two.ogg"></audio>
-  <audio id="one" src="https://actions.google.com/sounds/v1/human_voices/one.ogg"></audio>
   <audio id="rollSound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
   <audio id="drawSound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
 
@@ -146,8 +140,13 @@
       ...'PQR'.split('').flatMap(l => Array.from({length:6}, (_,i)=> `${l}${String(i+8).padStart(2,'0')}`))
     ];
 
-    let available = [...nomorKursi]; // anti-duplikat
-    let winners = [];
+    let available = JSON.parse(localStorage.getItem('availableSeats')) || [...nomorKursi];
+    let winners = JSON.parse(localStorage.getItem('winners')) || [];
+
+    function saveState() {
+      localStorage.setItem('availableSeats', JSON.stringify(available));
+      localStorage.setItem('winners', JSON.stringify(winners));
+    }
 
     function shuffle(arr) {
       for (let i = arr.length - 1; i > 0; i--) {
@@ -164,22 +163,7 @@
     function startDraw() {
       document.getElementById('result').innerHTML = '';
       document.getElementById('rolling').textContent = '';
-      const cd = document.getElementById('countdown');
-      const sounds = [three, two, one];
-      let i = 0;
-
-      cd.textContent = '3'; sounds[0].play();
-      const interval = setInterval(() => {
-        i++;
-        if (i < 3) {
-          cd.textContent = 3 - i;
-          sounds[i].play();
-        } else {
-          clearInterval(interval);
-          cd.textContent = '';
-          startRolling();
-        }
-      }, 1000);
+      startRolling();
     }
 
     function startRolling() {
@@ -189,7 +173,7 @@
 
       const rollInterval = setInterval(() => {
         shuffle(available);
-        rollingEl.textContent = available[0];
+        rollingEl.textContent = available[0] || '-';
         count++;
         if (count > 25) {
           clearInterval(rollInterval);
@@ -202,9 +186,12 @@
 
     function draw() {
       const pickCount = parseInt(document.getElementById('pickCount').value);
+      if (available.length === 0) return alert('Semua kursi sudah keluar');
+
       shuffle(available);
       const selected = available.splice(0, pickCount);
       winners.push(...selected);
+      saveState();
       drawSound.play();
 
       const resultDiv = document.getElementById('result');
