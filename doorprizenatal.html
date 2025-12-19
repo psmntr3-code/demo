@@ -207,17 +207,24 @@
 	}
     }
 
-    function downloadAll() {
+function downloadAll() {
   const all = Array.isArray(winners) ? winners : [];
   if (all.length === 0) return alert('Belum ada pemenang');
 
-  const text = all.join(','); // dipisahkan koma
-  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  // CSV untuk Excel (pakai BOM agar UTF-8 aman)
+  let csv = '\uFEFF"No.","Nomor Pemenang","Nama Pemenang","Tanda Tangan"\n';
+  all.forEach((nomor, i) => {
+    // 2 kolom terakhir kosong untuk diisi manual
+    csv += `"${i + 1}","${String(nomor).replace(/"/g, '""')}","",""\n`;
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'Hasil_Undian_GBI_Lembang_2025.txt';
+  a.download = 'Hasil_Undian_GBI_Lembang_2025.csv';
   a.click();
 }
+
 
     function startDraw() {
       elResult.innerHTML = '';
