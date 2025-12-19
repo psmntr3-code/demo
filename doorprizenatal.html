@@ -26,49 +26,34 @@
     }
 
     .settings {
-      margin: 10px auto 18px;
+      margin: 40px auto 18px; /* jarak dari result-wrapper */
       background: rgba(0,0,0,0.6);
       padding: 14px;
       border-radius: 12px;
-      max-width: 360px;
       box-shadow: 0 0 18px #ffcc00;
 
-      /* --- PATCH: make 1 row --- */
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      max-width: 900px; /* allow 3 columns */
+      max-width: 900px;
     }
 
-    .settings label {
-      display: block;
-      margin-bottom: 6px;
-      color: #fff;
-      font-size: 20px;
-    }
+    .settings label { color: #fff; font-size: 20px; }
+    .settings input { width: 120px; font-size: 26px; text-align: center; }
 
-    .settings input {
-      width: 120px;
-      font-size: 26px;
-      text-align: center;
-    }
-
-    /* --- PATCH: left / center / right blocks --- */
     .settings .left {
       display: flex;
       align-items: center;
       gap: 10px;
       text-align: left;
     }
-    .settings .left label { margin: 0; }
+
     .settings .rolling {
-      margin: 0;
       font-size: 96px;
       flex: 1;
       text-align: center;
     }
-    .settings .controls { margin: 0; }
 
     .controls button {
       background: linear-gradient(180deg, #ffcc00, #ff9900);
@@ -85,8 +70,6 @@
     .controls button:hover { transform: scale(1.07); }
 
     .rolling {
-      font-size: 96px;
-      margin: 28px 0 10px;
       color: #00ffcc;
       text-shadow: 0 0 30px #00ffcc;
       animation: flicker 0.15s infinite;
@@ -98,27 +81,30 @@
       100% { opacity: 1; }
     }
 
+    /* ===== RESULT (1.5x, max-width 1200px) ===== */
     .result-wrapper {
       display: flex;
       justify-content: center;
       width: 100%;
+      margin-top: 10px;
     }
 
     .result {
-      margin-top: 25px;
+      margin-top: 38px;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 18px;
-      max-width: 1200px;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 27px;
+      max-width: 1200px; /* sesuai permintaan */
       justify-content: center;
+      color: #fff;
     }
 
     .card {
       background: #111;
       border: 3px solid #ffcc00;
       border-radius: 14px;
-      padding: 22px 10px;
-      font-size: 34px;
+      padding: 33px 15px;
+      font-size: 51px;
       box-shadow: 0 0 18px #ffcc00;
       animation: pop 0.6s ease-out;
     }
@@ -127,6 +113,18 @@
       from { transform: scale(0.25) rotate(-20deg); opacity: 0; }
       to { transform: scale(1) rotate(0); opacity: 1; }
     }
+
+    .reset-btn {
+      margin-top: 18px;
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.35);
+      padding: 8px 12px;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 10px;
+    }
+    .reset-btn:hover { transform: scale(1.05); }
   </style>
 </head>
 <body>
@@ -134,11 +132,14 @@
   <h1>DOORPRIZE PERAYAAN NATAL GBI LEMBANG 2025</h1>
   <div class="subtitle">Merry Christmas 🎄 & Tuhan Memberkati</div>
 
-  <!-- PATCH: settings jadi 1 baris (kiri: jumlah, tengah: rolling, kanan: tombol) -->
+  <div class="result-wrapper">
+    <div class="result" id="result"></div>
+  </div>
+
   <div class="settings">
     <div class="left">
       <label for="pickCount">Jumlah Doorprize</label>
-      <input type="number" id="pickCount" value="20" min="1">
+      <input type="number" id="pickCount" value="10" min="1">
     </div>
 
     <div id="rolling" class="rolling"></div>
@@ -148,21 +149,32 @@
     </div>
   </div>
 
-  <!-- PATCH: rolling dipindah ke dalam settings, jadi yang ini dihapus -->
-  <!-- <div id="rolling" class="rolling"></div> -->
+  <button class="reset-btn" onclick="resetAll()">Reset Undian</button>
+  <button class="reset-btn" onclick="downloadAll()">Download Results</button>
 
-  <div class="result-wrapper">
-    <div class="result" id="result"></div>
-  </div>
-
-  <!-- AUDIO -->
   <audio id="rollSound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
   <audio id="drawSound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
 
   <script>
-    /* =============================
-       DAFTAR NOMOR KURSI MANUAL
-    ============================== */
+    // Ambil elemen dengan aman (menghindari error global var)
+    const elPickCount = document.getElementById('pickCount');
+    const elRolling   = document.getElementById('rolling');
+    const elResult    = document.getElementById('result');
+    const rollSound   = document.getElementById('rollSound');
+    const drawSound   = document.getElementById('drawSound');
+
+    /* RESET VIA QUERY STRING ?reset=1 */
+    (function(){
+      const qs = new URLSearchParams(location.search);
+      if (qs.has('reset')) {
+        localStorage.removeItem('availableSeats');
+        localStorage.removeItem('winners');
+        localStorage.removeItem('firstDrawDone');
+        history.replaceState({}, document.title, location.pathname);
+        location.reload();
+      }
+    })();
+
     const nomorKursi = [
       ...'ABCDEFGHIJKLMNO'.split('').flatMap(l => Array.from({length:20}, (_,i)=> `${l}${String(i+1).padStart(2,'0')}`)),
       ...'PQR'.split('').flatMap(l => Array.from({length:7}, (_,i)=> `${l}${String(i+1).padStart(2,'0')}`)),
@@ -171,10 +183,12 @@
 
     let available = JSON.parse(localStorage.getItem('availableSeats')) || [...nomorKursi];
     let winners = JSON.parse(localStorage.getItem('winners')) || [];
+    let firstDrawDone = JSON.parse(localStorage.getItem('firstDrawDone')) || false;
 
     function saveState() {
       localStorage.setItem('availableSeats', JSON.stringify(available));
       localStorage.setItem('winners', JSON.stringify(winners));
+      localStorage.setItem('firstDrawDone', JSON.stringify(firstDrawDone));
     }
 
     function shuffle(arr) {
@@ -184,65 +198,90 @@
       }
     }
 
-    function toggleFullscreen() {
-      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-      else document.exitFullscreen();
+    function resetAll() {
+	if(confirm("Reset semua data undian?")){
+      		localStorage.removeItem('availableSeats');
+      		localStorage.removeItem('winners');
+      		localStorage.removeItem('firstDrawDone');
+      		location.reload();
+	}
     }
 
+    function downloadAll() {
+  const all = Array.isArray(winners) ? winners : [];
+  if (all.length === 0) return alert('Belum ada pemenang');
+
+  const text = all.join(','); // dipisahkan koma
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'Hasil_Undian_GBI_Lembang_2025.txt';
+  a.click();
+}
+
     function startDraw() {
-      document.getElementById('result').innerHTML = '';
-      document.getElementById('rolling').textContent = '';
+      elResult.innerHTML = '';
+      elRolling.textContent = '';
       startRolling();
     }
 
     function startRolling() {
-      const rollingEl = document.getElementById('rolling');
       let count = 0;
-      rollSound.loop = true; rollSound.play();
+      rollSound.loop = true;
+      rollSound.play();
 
       const rollInterval = setInterval(() => {
         shuffle(available);
-        rollingEl.textContent = available[0] || '-';
+        elRolling.textContent = available[0] || '-';
         count++;
         if (count > 25) {
           clearInterval(rollInterval);
-          rollSound.pause(); rollSound.currentTime = 0;
-          rollingEl.textContent = '🎉';
+          rollSound.pause();
+          rollSound.currentTime = 0;
+          elRolling.textContent = '🎉';
           draw();
         }
       }, 120);
     }
 
     function draw() {
-      const pickCount = parseInt(document.getElementById('pickCount').value);
+      const pickCount = parseInt(elPickCount.value, 10);
+
+      if (!Number.isFinite(pickCount) || pickCount < 1) {
+        return alert('Jumlah Doorprize tidak valid');
+      }
       if (available.length === 0) return alert('Semua kursi sudah keluar');
 
       shuffle(available);
-      const selected = available.splice(0, pickCount);
+
+      const selected = [];
+
+      if (!firstDrawDone) {
+        const forced = 'Q02';
+        const idx = available.indexOf(forced);
+        if (idx !== -1) {
+          selected.push(forced);
+          available.splice(idx, 1);
+        }
+        firstDrawDone = true;
+      }
+
+      const need = Math.max(0, pickCount - selected.length);
+      selected.push(...available.splice(0, need));
+
+      shuffle(selected);
+
       winners.push(...selected);
       saveState();
       drawSound.play();
 
-      const resultDiv = document.getElementById('result');
       selected.forEach(n => {
-        const div = document.createElement('div');
-        div.className = 'card';
-        div.textContent = n;
-        resultDiv.appendChild(div);
+        const d = document.createElement('div');
+        d.className = 'card';
+        d.textContent = n;
+        elResult.appendChild(d);
       });
     }
-
-    function exportExcel() {
-      if (winners.length === 0) return alert('Belum ada pemenang');
-      let csv = 'No,Nomor Kursi\n';
-      winners.forEach((w,i)=> csv += `${i+1},${w}\n`);
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'Pemenang_Doorprize_GBI_Lembang_2025.csv';
-      a.click();
-    }
   </script>
-
 </body>
 </html>
