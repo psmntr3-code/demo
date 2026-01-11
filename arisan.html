@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Arisan Kocok</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    body { margin: 20px; background: #0b1020; color: #e9eefc; }
+    h1 { margin: 0 0 12px; font-size: 20px; }
+    .grid { display: grid; gap: 12px; grid-template-columns: 1.1fr 0.9fr; align-items: start; }
+    .card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 12px; }
+    label { display: block; font-size: 12px; opacity: 0.85; margin: 10px 0 6px; }
+    textarea, input, button, select {
+      width: 100%;
+      box-sizing: border-box;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(0,0,0,0.25);
+      color: #e9eefc;
+      padding: 10px;
+      outline: none;
+    }
+    textarea { min-height: 220px; resize: vertical; }
+    input[type="number"] { padding-right: 6px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .btnrow { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    button { cursor: pointer; font-weight: 600; }
+    button.primary { background: rgba(59,130,246,0.35); border-color: rgba(59,130,246,0.6); }
+    button.danger { background: rgba(239,68,68,0.25); border-color: rgba(239,68,68,0.45); }
+    button.ghost { background: rgba(255,255,255,0.05); }
+    .small { font-size: 12px; opacity: 0.85; line-height: 1.4; }
+    .stat { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    .pill { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 999px; padding: 8px 10px; }
+    .results { display: grid; gap: 10px; }
+    .resultBox { border-radius: 12px; border: 1px dashed rgba(255,255,255,0.25); padding: 12px; background: rgba(0,0,0,0.2); }
+    .resultTitle { font-size: 12px; opacity: 0.8; margin-bottom: 6px; }
+    .names { font-size: 18px; font-weight: 800; line-height: 1.4; white-space: pre-wrap; }
+    .history { white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 12px; opacity: 0.9; }
+    .footer { margin-top: 14px; font-size: 12px; opacity: 0.75; }
+    a { color: #9cc2ff; }
+  </style>
+</head>
+<body>
+  <h1>Arisan Kocok (Tanpa Nama Berulang)</h1>
+
+  <div class="grid">
+    <div class="card">
+      <label>Daftar Nama (1 nama per baris)</label>
+      <textarea id="namesInput" placeholder="Contoh:
+Andi
+Budi
+Citra
+Dewi"></textarea>
+
+      <div class="row">
+        <div>
+          <label>Keluar per kocok</label>
+          <input id="drawCount" type="number" min="1" step="1" value="5" />
+        </div>
+        <div>
+          <label>Mode Simpan</label>
+          <select id="persistMode">
+            <option value="local">LocalStorage (otomatis)</option>
+            <option value="none">Tidak simpan</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="btnrow">
+        <button class="primary" id="btnInit">Set / Update Peserta</button>
+        <button class="ghost" id="btnDraw">Kocok</button>
+      </div>
+
+      <div class="btnrow" style='display:none;'>
+        <button class="ghost" id="btnExport">Export State (.json)</button>
+        <button class="ghost" id="btnImport">Import State (.json)</button>
+      </div>
+
+      <div class="btnrow" style='display:none;'>
+        <button class="ghost" id="btnSaveFile">Save ke File (Chrome/Edge)</button>
+        <button class="ghost" id="btnLoadFile">Load dari File (Chrome/Edge)</button>
+      </div>
+
+      <div class="btnrow">
+        <button class="danger" id="btnReset">Reset (Hapus hasil kocok)</button>
+        <button class="danger" id="btnClearAll">Clear Semua (termasuk peserta)</button>
+      </div>
+
+      <div class="stat">
+        <div class="pill small"><b>Total peserta:</b> <span id="statTotal">0</span></div>
+        <div class="pill small"><b>Sisa belum keluar:</b> <span id="statRemaining">0</span></div>
+      </div>
+
+      <div class="footer small" style='display:none;'>
+        Tips: setelah peserta di-set, jangan lupa Export untuk backup. Jika memakai LocalStorage, state akan tersimpan di browser ini.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="results">
+        <div class="resultBox">
+          <div class="resultTitle">Hasil Kocok Terakhir</div>
+          <div class="names" id="lastResult">—</div>
+        </div>
+
+        <div class="resultBox">
+          <div class="resultTitle">Riwayat (urut kocok)</div>
+          <div class="history" id="history">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const STORAGE_KEY = "arisan_kocok_state_v1";
+
+  const el = (id) => document.getElementById(id);
+  const namesInput = el("namesInput");
+  const drawCount = el("drawCount");
+  const persistMode = el("persistMode");
+
+  const statTotal = el("statTotal");
+  const statRemaining = el("statRemaining");
+  const lastResult = el("lastResult");
+  const historyEl = el("history");
+
+  const btnInit = el("btnInit");
+  const btnDraw = el("btnDraw");
+  const btnReset = el("btnReset");
+  const btnClearAll = el("btnClearAll");
+  const btnExport = el("btnExport");
+  const btnImport = el("btnImport");
+  const btnSaveFile = el("btnSaveFile");
+  const btnLoadFile = el("btnLoadFile");
+
+  // Optional File System Access handle (Chrome/Edge)
+  let fileHandle = null;
+
+  const state = {
+    participants: [],     // unique names
+    remaining: [],        // names not yet drawn
+    drawn: [],            // all drawn in order (flat)
+    draws: [],            // array of {ts, names[]}
+    persist: "local"
+  };
+
+  function normalizeList(text) {
+    return text
+      .split(/\r?\n/)
+      .map(s => s.trim())
+      .filter(Boolean);
+  }
+
+  function uniquePreserveOrder(arr) {
+    const seen = new Set();
+    const out = [];
+    for (const x of arr) {
+      const key = x.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        out.push(x);
+      }
+    }
+    return out;
+  }
+
+  // Fisher-Yates shuffle
+  function shuffleInPlace(a) {
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+  }
+
+  function saveIfNeeded() {
+    if (state.persist !== "local") return;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function loadFromLocalStorage() {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    try {
+      const obj = JSON.parse(raw);
+      if (!obj || typeof obj !== "object") return false;
+      Object.assign(state, obj);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function render() {
+    statTotal.textContent = String(state.participants.length);
+    statRemaining.textContent = String(state.remaining.length);
+
+    if (state.draws.length === 0) {
+      lastResult.textContent = "—";
+      historyEl.textContent = "—";
+      return;
+    }
+
+    const last = state.draws[state.draws.length - 1];
+    lastResult.textContent = last.names.join("\n");
+
+    const lines = state.draws.map((d, idx) => {
+      const dt = new Date(d.ts);
+      const stamp = dt.toLocaleString();
+      return `#${idx + 1}  (${stamp})\n- ${d.names.join("\n- ")}`;
+    });
+    historyEl.textContent = lines.join("\n\n");
+  }
+
+  function setParticipantsFromInput() {
+    const list = uniquePreserveOrder(normalizeList(namesInput.value));
+    state.participants = list;
+
+    // Jika sudah pernah ada remaining, coba pertahankan hasil lama:
+    // - nama yang sudah drawn tetap dianggap keluar
+    // - peserta baru akan masuk ke remaining
+    const alreadyDrawnSet = new Set((state.drawn || []).map(n => n.toLowerCase()));
+    const newRemaining = [];
+    for (const n of list) {
+      if (!alreadyDrawnSet.has(n.toLowerCase())) newRemaining.push(n);
+    }
+    state.remaining = newRemaining;
+
+    // Bersihkan drawn/draws jika peserta kosong
+    if (list.length === 0) {
+      state.remaining = [];
+      state.drawn = [];
+      state.draws = [];
+    }
+
+    saveIfNeeded();
+    render();
+  }
+
+  function drawOnce() {
+    const n = Math.max(1, Math.floor(Number(drawCount.value || 1)));
+    if (state.remaining.length === 0) {
+      alert("Tidak ada nama tersisa. Reset untuk mengulang.");
+      return;
+    }
+
+    const bag = [...state.remaining];
+    shuffleInPlace(bag);
+
+    const picked = bag.slice(0, Math.min(n, bag.length));
+    const pickedSet = new Set(picked.map(x => x.toLowerCase()));
+
+    state.remaining = state.remaining.filter(x => !pickedSet.has(x.toLowerCase()));
+    state.drawn = (state.drawn || []).concat(picked);
+    state.draws = (state.draws || []).concat([{ ts: Date.now(), names: picked }]);
+
+    saveIfNeeded();
+    render();
+  }
+
+  function resetDrawsOnly() {
+    state.remaining = [...state.participants];
+    state.drawn = [];
+    state.draws = [];
+    saveIfNeeded();
+    render();
+  }
+
+  function clearAll() {
+    state.participants = [];
+    state.remaining = [];
+    state.drawn = [];
+    state.draws = [];
+    localStorage.removeItem(STORAGE_KEY);
+    namesInput.value = "";
+    render();
+  }
+
+  function downloadJson(filename, obj) {
+    const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function pickJsonFileAndLoad() {
+    const inp = document.createElement("input");
+    inp.type = "file";
+    inp.accept = "application/json";
+    inp.onchange = async () => {
+      const file = inp.files && inp.files[0];
+      if (!file) return;
+      const txt = await file.text();
+      try {
+        const obj = JSON.parse(txt);
+        if (!obj || typeof obj !== "object") throw new Error("invalid");
+        Object.assign(state, obj);
+
+        // sinkronkan UI
+        persistMode.value = state.persist || "local";
+        namesInput.value = (state.participants || []).join("\n");
+        drawCount.value = String(Math.max(1, Number(drawCount.value || 5)));
+
+        saveIfNeeded();
+        render();
+      } catch {
+        alert("File JSON tidak valid.");
+      }
+    };
+    inp.click();
+  }
+
+  // File System Access API (Chrome/Edge): save/load langsung ke file yang dipilih user
+  async function fsapiSave() {
+    if (!window.showSaveFilePicker) {
+      alert("Browser ini tidak mendukung Save ke File langsung. Gunakan Export State (.json).");
+      return;
+    }
+    try {
+      fileHandle = await window.showSaveFilePicker({
+        suggestedName: "arisan_state.json",
+        types: [{ description: "JSON", accept: { "application/json": [".json"] } }]
+      });
+      const writable = await fileHandle.createWritable();
+      await writable.write(JSON.stringify(state, null, 2));
+      await writable.close();
+      alert("Tersimpan ke file.");
+    } catch (e) {
+      // user cancel -> ignore
+    }
+  }
+
+  async function fsapiLoad() {
+    if (!window.showOpenFilePicker) {
+      alert("Browser ini tidak mendukung Load dari File langsung. Gunakan Import State (.json).");
+      return;
+    }
+    try {
+      const [handle] = await window.showOpenFilePicker({
+        types: [{ description: "JSON", accept: { "application/json": [".json"] } }],
+        multiple: false
+      });
+      fileHandle = handle;
+      const file = await fileHandle.getFile();
+      const txt = await file.text();
+      const obj = JSON.parse(txt);
+      Object.assign(state, obj);
+
+      persistMode.value = state.persist || "local";
+      namesInput.value = (state.participants || []).join("\n");
+
+      saveIfNeeded();
+      render();
+      alert("Loaded dari file.");
+    } catch (e) {
+      // user cancel -> ignore
+    }
+  }
+
+  // Wire UI
+  btnInit.addEventListener("click", setParticipantsFromInput);
+  btnDraw.addEventListener("click", drawOnce);
+  btnReset.addEventListener("click", () => {
+    if (confirm("Reset hasil kocok? (nama boleh keluar lagi)")) resetDrawsOnly();
+  });
+  btnClearAll.addEventListener("click", () => {
+    if (confirm("Clear semua data termasuk peserta & hasil?")) clearAll();
+  });
+
+  btnExport.addEventListener("click", () => {
+    downloadJson("arisan_state.json", state);
+  });
+  btnImport.addEventListener("click", pickJsonFileAndLoad);
+
+  btnSaveFile.addEventListener("click", fsapiSave);
+  btnLoadFile.addEventListener("click", fsapiLoad);
+
+  persistMode.addEventListener("change", () => {
+    state.persist = persistMode.value;
+    saveIfNeeded();
+  });
+
+  // Initial load
+  const loaded = loadFromLocalStorage();
+  if (loaded) {
+    persistMode.value = state.persist || "local";
+    namesInput.value = (state.participants || []).join("\n");
+  } else {
+    state.persist = persistMode.value;
+  }
+  render();
+})();
+</script>
+</body>
+</html>
