@@ -725,9 +725,11 @@
       });
     }
 
-    function getSortedDates() {
-      return Object.keys(appState.checklistHistory).sort();
-    }
+  function getSortedDates() {
+    const today = getTodayDateKey();
+    ensureChecklistDate(today);
+    return Object.keys(appState.checklistHistory).sort();
+  }
 
     function formatDateLabel(dateStr) {
       const d = new Date(dateStr + 'T00:00:00');
@@ -804,6 +806,30 @@
       return formatHours(minutesToHours(min));
     }
 
+  function getTodayDateKey() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function ensureChecklistDate(dateKey) {
+  if (!appState.checklistHistory) {
+    appState.checklistHistory = {};
+  }
+
+  if (!appState.checklistHistory[dateKey]) {
+    appState.checklistHistory[dateKey] = {};
+  }
+
+  appState.tasks.forEach(task => {
+    if (appState.checklistHistory[dateKey][task.id] === undefined) {
+      appState.checklistHistory[dateKey][task.id] = false;
+    }
+  });
+}
+  
     function renderRewardSummary() {
       const rewardMinutes = appState.rewardEntries
         .filter(x => x.type === 'reward')
@@ -1004,21 +1030,24 @@
     }
 
     function initDefaultFormDate() {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = getTodayDateKey();
       document.getElementById('entryDate').value = today;
     }
 
     async function init() {
       setupTabs();
-      initDefaultFormDate();
-
+    
       await loadStateFromFirebase();
-
+    
+      initDefaultFormDate();
+      ensureChecklistDate(getTodayDateKey());
+      saveState();
+    
       renderChecklistTable();
       renderRewardSummary();
       renderRewardTable();
       renderTaskList();
-
+    
       document.getElementById('addTaskBtn').addEventListener('click', addTask);
       document.getElementById('addEntryBtn').addEventListener('click', addRewardEntry);
     }
