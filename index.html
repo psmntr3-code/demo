@@ -117,7 +117,9 @@
               <th class="text-left py-2 pr-4">Bulan</th>
               <th class="text-right py-2 pr-4">Persembahan Pembangunan SM</th>
               <th class="text-right py-2 pr-4">Persembahan Via Transfer</th>
-		      <th class="text-right py-2 pr-4">Janji Iman</th>
+              <th class="text-right py-2 pr-4">Janji Iman</th>
+              <th class="text-right py-2 pr-4">Bunga (+)</th>
+              <th class="text-right py-2 pr-4">Admin (-)</th>
               <th class="text-right py-2 pr-4">Total</th>
             </tr>
           </thead>
@@ -186,20 +188,25 @@
         const keys = Object.keys(monthly).sort(); // YYYY-MM naik
         for (const k of keys) {
           const [y, m] = k.split("-");
+          const item = monthly[k] || {};
 
-          const pir = monthly[k].PIR       ? Number(dec64(monthly[k].PIR))       : 0;
-          const trf = monthly[k].Transfer  ? Number(dec64(monthly[k].Transfer))  : 0;
+          const pir    = item.PIR      ? Number(dec64(item.PIR))      : 0;
+          const trf    = item.Transfer ? Number(dec64(item.Transfer)) : 0;
+          const bunga  = item.Bunga    ? Number(dec64(item.Bunga))    : 0;
+          const admin  = item.Admin    ? Number(dec64(item.Admin))    : 0;
 
           // Janji Iman (realisasi)
-          const jiRaw = monthly[k].JanjiIman ? dec64(monthly[k].JanjiIman) : "0";
+          const jiRaw = item.JanjiIman ? dec64(item.JanjiIman) : "0";
           const ji = Number(jiRaw) || 0;
 
           // Target Janji Iman: bisa ada "++" di belakang
-          const targetJiRaw   = monthly[k].TargetJanjiIman ? dec64(monthly[k].TargetJanjiIman) : "0";
+          const targetJiRaw   = item.TargetJanjiIman ? dec64(item.TargetJanjiIman) : "0";
           const targetJiNum   = parseInt(targetJiRaw, 10) || 0;          // dipakai untuk hitung %
           const targetJiPlus  = targetJiRaw.includes("++");              // hanya untuk tampilan
 
-          const subtotal = pir + trf + ji;
+          // Bunga menambah saldo, sedangkan biaya admin mengurangi saldo.
+          // Field lama yang belum mempunyai Bunga/Admin otomatis bernilai 0.
+          const subtotal = pir + trf + ji + bunga - admin;
           totalMasuk += subtotal;
 
           rows.push({
@@ -209,6 +216,8 @@
             pir,
             trf,
             ji,
+            bunga,
+            admin,
             jiTarget: targetJiNum,
             jiTargetPlus: targetJiPlus,
             subtotal
@@ -244,6 +253,8 @@
             <td class="py-2 pr-4 text-right">${rupiah(r.pir)}</td>
             <td class="py-2 pr-4 text-right">${rupiah(r.trf)}</td>
             <td class="py-2 pr-4 text-right">${rupiah(r.ji)}</td>
+            <td class="py-2 pr-4 text-right text-emerald-700">${rupiah(r.bunga)}</td>
+            <td class="py-2 pr-4 text-right text-rose-700">${r.admin ? `- ${rupiah(r.admin)}` : rupiah(0)}</td>
             <td class="py-2 pr-4 text-right font-semibold">${rupiah(r.subtotal)}</td>
           </tr>
         `);
